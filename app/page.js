@@ -1,5 +1,6 @@
-import Card from '../components/Card'
-import QuickLinks from '../components/QuickLinks'
+import Card from './components/Card'
+import QuickLinks from './components/QuickLinks'
+
 export default function Home(){
   return (
     <main className="container">
