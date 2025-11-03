@@ -1,0 +1,1 @@
+export default function QuickLinks(){ return (<div className="card flex gap-3 items-center"><div className="flex-1">Quick access to modules</div><div className="flex gap-2"><a href='/fundamental' className='btn'>Fundamental</a><a href='/technical' className='btn'>Technical</a></div></div>) }

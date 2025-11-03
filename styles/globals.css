@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,body,#root { height: 100%; }
+body { @apply bg-bg text-white antialiased; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; }
+.card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius: 12px; padding: 16px; box-shadow: 0 6px 30px rgba(2,6,23,0.6); }
+.btn { @apply px-3 py-1 rounded bg-accent text-black font-semibold; }
+.input { @apply px-3 py-2 rounded bg-gray-800 border border-gray-700; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.header { @apply flex items-center justify-between mb-6; }
+.sidebar { width: 240px; position: fixed; top:0; left:0; bottom:0; padding:20px; background:rgba(3,7,18,0.6); }
+.main { margin-left: 260px; padding: 24px; }

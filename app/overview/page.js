@@ -1,0 +1,1 @@
+export default function Page(){ return (<main className='container'><h2 className='text-xl font-semibold'>Market Overview</h2><div className='mt-4 card'>Global indices & sentiment placeholder</div></main>) }
