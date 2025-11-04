@@ -1,54 +1,51 @@
-import { NextResponse } from "next/server";
+import axios from "axios";
 
-export async function GET() {
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const symbol = searchParams.get("symbol") || "NIFTY";
+
   try {
-    const url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY";
+    const res = await axios.get(
+      `https://www.nseindia.com/api/option-chain-indices?symbol=${symbol}`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Encoding": "gzip, deflate, br",
+          "Accept-Language": "en-US,en;q=0.9",
+          Referer: "https://www.nseindia.com/",
+        },
+      }
+    );
 
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15",
-        "Accept": "application/json",
-        "Referer": "https://www.nseindia.com/",
-      },
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      throw new Error(`NSE API Error: ${res.status}`);
+    const records = res.data?.records?.data;
+    if (!records || records.length === 0) {
+      return Response.json({ error: "No data" }, { status: 500 });
     }
 
-    const data = await res.json();
+    let totalCE = 0,
+      totalPE = 0;
 
-    // Extracting meaningful data
-    const records = data?.records?.data || [];
-    if (!records.length) {
-      return NextResponse.json({ error: "No data received from NSE" }, { status: 500 });
+    for (const item of records) {
+      if (item.CE) totalCE += item.CE.openInterest || 0;
+      if (item.PE) totalPE += item.PE.openInterest || 0;
     }
 
-    let totalCallOI = 0;
-    let totalPutOI = 0;
+    const pcr = (totalPE / totalCE).toFixed(2);
+    const trend =
+      pcr > 1.3 ? "Bullish" : pcr < 0.7 ? "Bearish" : "Neutral";
 
-    records.forEach((item) => {
-      totalCallOI += item.CE?.openInterest || 0;
-      totalPutOI += item.PE?.openInterest || 0;
-    });
-
-    const pcr = totalPutOI / totalCallOI;
-    let trend =
-      pcr > 1.2 ? "Bullish" : pcr < 0.8 ? "Bearish" : "Neutral";
-
-    return NextResponse.json({
-      symbol: "NIFTY",
-      totalCallOI,
-      totalPutOI,
-      pcr: pcr.toFixed(2),
+    return Response.json({
+      symbol,
+      totalCallOI: totalCE / 3,
+      totalPutOI: totalPE / 3,
+      pcr,
       trend,
     });
   } catch (err) {
-    console.error("API Error:", err.message);
-    return NextResponse.json(
-      { error: err.message || "Internal Server Error" },
+    console.error("Error fetching NSE data:", err.message);
+    return Response.json(
+      { error: "Unable to fetch data from NSE. Try again later." },
       { status: 500 }
     );
   }
