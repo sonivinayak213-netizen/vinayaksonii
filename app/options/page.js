@@ -4,31 +4,27 @@ import { useEffect, useState } from 'react';
 export default function OptionsPage() {
   const [data, setData] = useState([]);
 
-  // Function to simulate fetching option data
   const fetchData = () => {
     const sampleData = [
-      {
-        index: 'NIFTY',
-        callOI: Math.floor(Math.random() * 100000),
-        putOI: Math.floor(Math.random() * 100000),
-      },
-      {
-        index: 'BANKNIFTY',
-        callOI: Math.floor(Math.random() * 100000),
-        putOI: Math.floor(Math.random() * 100000),
-      },
+      { option: 'NIFTY', change: (Math.random() * 2 - 1).toFixed(2) },
+      { option: 'BANKNIFTY', change: (Math.random() * 2 - 1).toFixed(2) },
+      { option: 'FINNIFTY', change: (Math.random() * 2 - 1).toFixed(2) },
     ];
 
-    const withPCR = sampleData.map((item) => {
-      const pcr = (item.putOI / item.callOI).toFixed(2);
-      const sentiment = pcr > 1 ? 'Bullish 🟢' : 'Bearish 🔴';
-      return { ...item, pcr, sentiment };
+    const withDetails = sampleData.map((item) => {
+      const pcr = (Math.random() * 2).toFixed(2);
+      const trend =
+        pcr > 1.2
+          ? { label: 'Bullish 🟢', color: 'text-green-400' }
+          : pcr < 0.8
+          ? { label: 'Bearish 🔴', color: 'text-red-400' }
+          : { label: 'Neutral 🟡', color: 'text-yellow-400' };
+      return { ...item, pcr, trend };
     });
 
-    setData(withPCR);
+    setData(withDetails);
   };
 
-  // Fetch on load + every 5 minutes
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 5 * 60 * 1000);
@@ -36,27 +32,49 @@ export default function OptionsPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-900 text-white p-8">
-      <h1 className="text-3xl font-bold mb-6">Options & PCR Overview</h1>
+    <main className="min-h-screen bg-[#0f1623] text-gray-100 flex flex-col items-center py-10">
+      <h1 className="text-3xl font-bold mb-8 text-white">
+        Live Options Dashboard 📊
+      </h1>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-700">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-gray-800 text-gray-300 uppercase">
-            <tr>
-              <th className="px-4 py-3">Index</th>
-              <th className="px-4 py-3">Call OI</th>
-              <th className="px-4 py-3">Put OI</th>
-              <th className="px-4 py-3">PCR</th>
-              <th className="px-4 py-3">Sentiment</th>
-              <th className="px-4 py-3">Last Updated</th>
+      <div className="w-full max-w-4xl bg-[#1a2333] rounded-2xl shadow-xl overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-[#232c3e] text-gray-200 text-sm uppercase">
+              <th className="px-6 py-4">Option</th>
+              <th className="px-6 py-4">Change (%)</th>
+              <th className="px-6 py-4">PCR</th>
+              <th className="px-6 py-4">Trend</th>
             </tr>
           </thead>
           <tbody>
             {data.map((row, idx) => (
-              <tr key={idx} className="border-b border-gray-700 hover:bg-gray-800">
-                <td className="px-4 py-3 font-semibold">{row.index}</td>
-                <td className="px-4 py-3">{row.callOI.toLocaleString()}</td>
-                <td className="px-4 py-3">{row.putOI.toLocaleString()}</td>
-                <td className="px-4 py-3">{row.pcr}</td>
-                <td className="px-4 py-3 font-medium">{row.sentiment}</td>
-                <td className="p
+              <tr
+                key={idx}
+                className="border-b border-gray-700 hover:bg-[#283249] transition"
+              >
+                <td className="px-6 py-4 font-medium text-white">{row.option}</td>
+                <td
+                  className={`px-6 py-4 font-semibold ${
+                    row.change >= 0 ? 'text-green-400' : 'text-red-400'
+                  }`}
+                >
+                  {row.change}%
+                </td>
+                <td className="px-6 py-4 text-blue-400">{row.pcr}</td>
+                <td className={`px-6 py-4 font-semibold ${row.trend.color}`}>
+                  {row.trend.label}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-gray-400 mt-6 text-sm">
+        Auto-refresh every 5 minutes ⏱ | Developed by{' '}
+        <span className="text-blue-400">@vinayaksonii</span>
+      </p>
+    </main>
+  );
+}
