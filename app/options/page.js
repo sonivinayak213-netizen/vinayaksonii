@@ -1,44 +1,34 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function Page() {
+export default function OptionsPage() {
   const [data, setData] = useState([]);
 
-  // Dummy options data (simulate real-time update)
+  // Function to simulate fetching option data
   const fetchData = () => {
     const sampleData = [
       {
-        option: 'NIFTY 22500 CE',
-        change: (Math.random() * 5 - 2.5).toFixed(2),
-        pcr: (Math.random() * 1.5 + 0.5).toFixed(2),
+        index: 'NIFTY',
+        callOI: Math.floor(Math.random() * 100000),
+        putOI: Math.floor(Math.random() * 100000),
       },
       {
-        option: 'NIFTY 22500 PE',
-        change: (Math.random() * 5 - 2.5).toFixed(2),
-        pcr: (Math.random() * 1.5 + 0.5).toFixed(2),
-      },
-      {
-        option: 'BANKNIFTY 48000 CE',
-        change: (Math.random() * 5 - 2.5).toFixed(2),
-        pcr: (Math.random() * 1.5 + 0.5).toFixed(2),
+        index: 'BANKNIFTY',
+        callOI: Math.floor(Math.random() * 100000),
+        putOI: Math.floor(Math.random() * 100000),
       },
     ];
 
-    // Calculate trend based on PCR
-    const updated = sampleData.map(item => ({
-      ...item,
-      trend:
-        item.pcr > 1.0
-          ? 'Bullish 🟢'
-          : item.pcr < 0.8
-          ? 'Bearish 🔴'
-          : 'Neutral 🟡',
-    }));
+    const withPCR = sampleData.map((item) => {
+      const pcr = (item.putOI / item.callOI).toFixed(2);
+      const sentiment = pcr > 1 ? 'Bullish 🟢' : 'Bearish 🔴';
+      return { ...item, pcr, sentiment };
+    });
 
-    setData(updated);
+    setData(withPCR);
   };
 
-  // Fetch data every 5 minutes
+  // Fetch on load + every 5 minutes
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 5 * 60 * 1000);
@@ -46,54 +36,27 @@ export default function Page() {
   }, []);
 
   return (
-    <main className="p-8">
-      <h2 className="text-2xl font-bold mb-6 text-center">
-        Live Options Dashboard 📊
-      </h2>
+    <main className="min-h-screen bg-gray-900 text-white p-8">
+      <h1 className="text-3xl font-bold mb-6">Options & PCR Overview</h1>
 
-      <table className="min-w-full bg-white rounded-xl shadow-md overflow-hidden">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="py-3 px-4 text-left font-semibold">Option</th>
-            <th className="py-3 px-4 text-left font-semibold">Change (%)</th>
-            <th className="py-3 px-4 text-left font-semibold">PCR</th>
-            <th className="py-3 px-4 text-left font-semibold">Trend</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, idx) => (
-            <tr
-              key={idx}
-              className="border-b hover:bg-gray-50 transition-colors"
-            >
-              <td className="py-3 px-4">{item.option}</td>
-              <td
-                className={`py-3 px-4 ${
-                  item.change >= 0 ? 'text-green-600' : 'text-red-500'
-                }`}
-              >
-                {item.change}%
-              </td>
-              <td className="py-3 px-4">{item.pcr}</td>
-              <td
-                className={`py-3 px-4 ${
-                  item.trend.includes('Bullish')
-                    ? 'text-green-600'
-                    : item.trend.includes('Bearish')
-                    ? 'text-red-500'
-                    : 'text-yellow-500'
-                }`}
-              >
-                {item.trend}
-              </td>
+      <div className="overflow-x-auto rounded-lg border border-gray-700">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-gray-800 text-gray-300 uppercase">
+            <tr>
+              <th className="px-4 py-3">Index</th>
+              <th className="px-4 py-3">Call OI</th>
+              <th className="px-4 py-3">Put OI</th>
+              <th className="px-4 py-3">PCR</th>
+              <th className="px-4 py-3">Sentiment</th>
+              <th className="px-4 py-3">Last Updated</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <p className="text-center text-sm text-gray-500 mt-6">
-        Auto-refresh every 5 minutes ⏱️ | Developed by @vinayaksonii
-      </p>
-    </main>
-  );
-}
+          </thead>
+          <tbody>
+            {data.map((row, idx) => (
+              <tr key={idx} className="border-b border-gray-700 hover:bg-gray-800">
+                <td className="px-4 py-3 font-semibold">{row.index}</td>
+                <td className="px-4 py-3">{row.callOI.toLocaleString()}</td>
+                <td className="px-4 py-3">{row.putOI.toLocaleString()}</td>
+                <td className="px-4 py-3">{row.pcr}</td>
+                <td className="px-4 py-3 font-medium">{row.sentiment}</td>
+                <td className="p
