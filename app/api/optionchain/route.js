@@ -1,5 +1,4 @@
 export const dynamic = 'force-dynamic';
-
 import axios from "axios";
 
 export async function GET(req) {
@@ -25,28 +24,22 @@ export async function GET(req) {
       return Response.json({ error: "No data" }, { status: 500 });
     }
 
-    let totalCallOI = 0;
-    let totalPutOI = 0;
-
-    for (const item of records) {
-      if (item.CE?.openInterest) totalCallOI += item.CE.openInterest;
-      if (item.PE?.openInterest) totalPutOI += item.PE.openInterest;
-    }
-
-    const pcr = totalPutOI / totalCallOI;
-    let trend = "Neutral";
-    if (pcr > 1.3) trend = "Bullish";
-    else if (pcr < 0.7) trend = "Bearish";
+    // Calculate Total Call & Put OI
+    const totalCallOI = records.reduce((sum, item) => sum + (item?.CE?.openInterest || 0), 0);
+    const totalPutOI = records.reduce((sum, item) => sum + (item?.PE?.openInterest || 0), 0);
+    const pcr = (totalPutOI / totalCallOI).toFixed(2);
+    const trend = pcr > 1 ? "Bullish" : "Bearish";
 
     return Response.json({
       symbol,
       totalCallOI,
       totalPutOI,
-      pcr: pcr.toFixed(2),
+      pcr,
       trend,
+      lastUpdated: new Date().toLocaleTimeString(),
     });
   } catch (error) {
-    console.error("Error fetching data:", error.message);
+    console.error("Error fetching data:", error);
     return Response.json({ error: "Failed to fetch data" }, { status: 500 });
   }
 }
