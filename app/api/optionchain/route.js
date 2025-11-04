@@ -1,55 +1,49 @@
-// ===============================
-// ✅ route.js (Final Fix for Vercel / Dynamic Fetch)
-// ===============================
-
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
-
 import axios from "axios";
+import { NextResponse } from "next/server";
 
-export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const symbol = searchParams.get("symbol") || "NIFTY";
+const symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"];
 
+export async function GET() {
   try {
-    const res = await axios.get(
-      `https://www.nseindia.com/api/option-chain-indices?symbol=${symbol}`,
-      {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept-Encoding": "gzip, deflate, br",
-          "Accept-Language": "en-US,en;q=0.9",
-          Referer: "https://www.nseindia.com/",
-        },
-        withCredentials: true,
-      }
+    const results = await Promise.all(
+      symbols.map(async (symbol) => {
+        const res = await axios.get(
+          `https://www.nseindia.com/api/option-chain-indices?symbol=${symbol}`,
+          {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36",
+              "Accept": "application/json",
+            },
+          }
+        );
+
+        const data = res.data;
+        const ceOi = data.filtered.CE?.reduce((a, b) => a + (b.openInterest || 0), 0) || 0;
+        const peOi = data.filtered.PE?.reduce((a, b) => a + (b.openInterest || 0), 0) || 0;
+        const pcr = peOi / ceOi;
+
+        let trend = "Neutral";
+        if (pcr > 1.3) trend = "Bullish";
+        else if (pcr < 0.7) trend = "Bearish";
+
+        return {
+          symbol,
+          totalCallOi: ceOi,
+          totalPutOi: peOi,
+          pcr: pcr.toFixed(2),
+          trend,
+        };
+      })
     );
 
-    const records =
-      res.data?.records?.data ||
-      res.data?.filtered?.data ||
-      res.data?.data ||
-      [];
-
-    const ceOi = res.data?.records?.CE?.totOI || 0;
-    const peOi = res.data?.records?.PE?.totOI || 0;
-    const pcr = peOi && ceOi ? (peOi / ceOi).toFixed(2) : null;
-
-    return Response.json({
-      symbol,
-      pcr,
-      totalCallOi: ceOi,
-      totalPutOi: peOi,
-      records,
+    return NextResponse.json({
+      success: true,
       updatedAt: new Date().toLocaleTimeString(),
+      data: results,
     });
   } catch (error) {
-    console.error("⚠️ NSE API fetch error:", error.message);
-    return Response.json(
-      { error: "Failed to fetch data from NSE", details: error.message },
-      { status: 500 }
-    );
+    console.error("API Error:", error.message);
+    return NextResponse.json({ success: false, message: "Fetch failed" });
   }
 }
