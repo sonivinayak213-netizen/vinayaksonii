@@ -1,4 +1,10 @@
-export const dynamic = 'force-dynamic';
+// ===============================
+// ✅ route.js (Final Working Version)
+// ===============================
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import axios from "axios";
 
 export async function GET(req) {
@@ -15,31 +21,42 @@ export async function GET(req) {
           "Accept-Encoding": "gzip, deflate, br",
           "Accept-Language": "en-US,en;q=0.9",
           Referer: "https://www.nseindia.com/",
+          Connection: "keep-alive",
         },
+        withCredentials: true,
       }
     );
 
-    const records = res.data?.records?.data;
+    // ✅ NSE API ka response structure kabhi-kabhi change hota hai
+    const records =
+      res.data?.records?.data ||
+      res.data?.filtered?.data ||
+      res.data?.data ||
+      [];
+
+    // Debug log (optional)
+    console.log("Fetched records count:", records.length);
+
     if (!records || records.length === 0) {
-      return Response.json({ error: "No data" }, { status: 500 });
+      return Response.json({ error: "No data received from NSE" }, { status: 500 });
     }
 
-    // Calculate Total Call & Put OI
-    const totalCallOI = records.reduce((sum, item) => sum + (item?.CE?.openInterest || 0), 0);
-    const totalPutOI = records.reduce((sum, item) => sum + (item?.PE?.openInterest || 0), 0);
-    const pcr = (totalPutOI / totalCallOI).toFixed(2);
-    const trend = pcr > 1 ? "Bullish" : "Bearish";
+    // ✅ PCR aur other useful fields extract karne ke liye example
+    const ceOi = res.data?.records?.CE?.totOI || 0;
+    const peOi = res.data?.records?.PE?.totOI || 0;
+    const pcr = peOi && ceOi ? (peOi / ceOi).toFixed(2) : null;
 
     return Response.json({
       symbol,
-      totalCallOI,
-      totalPutOI,
       pcr,
-      trend,
-      lastUpdated: new Date().toLocaleTimeString(),
+      records,
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Error fetching data:", error);
-    return Response.json({ error: "Failed to fetch data" }, { status: 500 });
+    console.error("⚠️ NSE API fetch error:", error.message);
+    return Response.json(
+      { error: "Failed to fetch option chain", details: error.message },
+      { status: 500 }
+    );
   }
 }
