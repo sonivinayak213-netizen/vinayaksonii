@@ -1,8 +1,9 @@
 // ===============================
-// ✅ route.js (Final Working Version)
+// ✅ route.js (Final Fix for Vercel / Dynamic Fetch)
 // ===============================
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 export const revalidate = 0;
 
 import axios from "axios";
@@ -21,27 +22,17 @@ export async function GET(req) {
           "Accept-Encoding": "gzip, deflate, br",
           "Accept-Language": "en-US,en;q=0.9",
           Referer: "https://www.nseindia.com/",
-          Connection: "keep-alive",
         },
         withCredentials: true,
       }
     );
 
-    // ✅ NSE API ka response structure kabhi-kabhi change hota hai
     const records =
       res.data?.records?.data ||
       res.data?.filtered?.data ||
       res.data?.data ||
       [];
 
-    // Debug log (optional)
-    console.log("Fetched records count:", records.length);
-
-    if (!records || records.length === 0) {
-      return Response.json({ error: "No data received from NSE" }, { status: 500 });
-    }
-
-    // ✅ PCR aur other useful fields extract karne ke liye example
     const ceOi = res.data?.records?.CE?.totOI || 0;
     const peOi = res.data?.records?.PE?.totOI || 0;
     const pcr = peOi && ceOi ? (peOi / ceOi).toFixed(2) : null;
@@ -49,13 +40,15 @@ export async function GET(req) {
     return Response.json({
       symbol,
       pcr,
+      totalCallOi: ceOi,
+      totalPutOi: peOi,
       records,
-      timestamp: new Date().toISOString(),
+      updatedAt: new Date().toLocaleTimeString(),
     });
   } catch (error) {
     console.error("⚠️ NSE API fetch error:", error.message);
     return Response.json(
-      { error: "Failed to fetch option chain", details: error.message },
+      { error: "Failed to fetch data from NSE", details: error.message },
       { status: 500 }
     );
   }
