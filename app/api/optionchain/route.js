@@ -23,30 +23,28 @@ export async function GET(req) {
       return Response.json({ error: "No data" }, { status: 500 });
     }
 
-    let totalCE = 0,
-      totalPE = 0;
+    let totalCallOI = 0;
+    let totalPutOI = 0;
 
     for (const item of records) {
-      if (item.CE) totalCE += item.CE.openInterest || 0;
-      if (item.PE) totalPE += item.PE.openInterest || 0;
+      if (item.CE?.openInterest) totalCallOI += item.CE.openInterest;
+      if (item.PE?.openInterest) totalPutOI += item.PE.openInterest;
     }
 
-    const pcr = (totalPE / totalCE).toFixed(2);
-    const trend =
-      pcr > 1.3 ? "Bullish" : pcr < 0.7 ? "Bearish" : "Neutral";
+    const pcr = totalPutOI / totalCallOI;
+    let trend = "Neutral";
+    if (pcr > 1.3) trend = "Bullish";
+    else if (pcr < 0.7) trend = "Bearish";
 
     return Response.json({
       symbol,
-      totalCallOI: totalCE / 3,
-      totalPutOI: totalPE / 3,
-      pcr,
+      totalCallOI,
+      totalPutOI,
+      pcr: pcr.toFixed(2),
       trend,
     });
-  } catch (err) {
-    console.error("Error fetching NSE data:", err.message);
-    return Response.json(
-      { error: "Unable to fetch data from NSE. Try again later." },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("Error fetching data:", error.message);
+    return Response.json({ error: "Failed to fetch data" }, { status: 500 });
   }
 }
