@@ -1,11 +1,13 @@
-'use client'
-import { useEffect, useState } from 'react'
-export default function Card({ title, symbol }){
-  const [quote,setQuote] = useState(null)
-  useEffect(()=>{
-    if(!symbol) return
-    fetch(`/api/quote?symbol=${encodeURIComponent(symbol)}`)
-      .then(r=>r.json()).then(d=>{ try{ setQuote(d.quoteResponse.result[0]) }catch(e){ setQuote(null) } }).catch(()=>{})
-  },[symbol])
-  return (<div className="card"><h3 className="font-semibold">{title}</h3><div style={{height:100}} className="flex items-center justify-center bg-gray-900 rounded mt-2">{quote ? (<div className='text-center'><div className='font-bold'>{quote.shortName||quote.symbol}</div><div className='text-sm'>{quote.regularMarketPrice} {quote.currency}</div></div>) : <div className='text-sm text-muted'>Live loading...</div>}</div></div>)
+export function Card({ title, subtitle, children }) {
+  return (
+    <div className="bg-card rounded-xl p-4 shadow border border-slate-700/40">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="text-slate-200 font-semibold">{title}</div>
+          {subtitle && <div className="text-sm text-slate-400">{subtitle}</div>}
+        </div>
+      </div>
+      <div>{children}</div>
+    </div>
+  );
 }
